@@ -5,15 +5,27 @@ import (
 	"encoding/json"
 
 	"log"
+	"tree/util"
 )
 
-func DBConnection(db DBInfo, query string) *sql.DB {
+var fileLog = new(util.File)
+
+func DBConnection(db DBInfo) *sql.DB {
+	fileLog.Path = "./logs/SQL"
+	fileLog.Name = "DBAccess"
+
+	f := util.Logging(fileLog, "DBConnect", "", nil)
+
+	defer f.Close()
+
 	dataSource := db.user + ":" + db.pwd + "@tcp(" + db.url + ")/" + db.database
 
 	conn, err := sql.Open(db.engine, dataSource)
 
 	if err != nil {
-		log.Fatal(err)
+		errorLog := log.New(f, "[ERROR] : ", log.LstdFlags)
+		errorLog.Print(" DBConnect Error!!")
+		errorLog.Println(err)
 	}
 
 	return conn
@@ -23,14 +35,24 @@ func DBConnection(db DBInfo, query string) *sql.DB {
 
 // INSERT 쿼리문
 func InsertQuery(db DBInfo, query string) int64 {
-	conn := DBConnection(db, query)
+	conn := DBConnection(db)
 	defer conn.Close()
 
+	// 연결된 DB에 쿼리 전송
 	result, err := conn.Exec(query)
 
+	fileLog.Path = "./logs/SQL"
+	fileLog.Name = "Query"
+
+	f := util.Logging(fileLog, "Insert Query", query, nil)
+
 	if err != nil {
-		log.Fatal(err)
+		errorLog := log.New(f, "[ERROR] : ", log.LstdFlags)
+		errorLog.Print(" Insert Query Error!! -> " + query)
+		errorLog.Println(err)
 	}
+
+	defer f.Close()
 
 	nRow, err := result.RowsAffected()
 
@@ -40,14 +62,24 @@ func InsertQuery(db DBInfo, query string) int64 {
 
 // SELECT 쿼리문
 func SelectListQuery(db DBInfo, query string) []byte {
-	conn := DBConnection(db, query)
+	conn := DBConnection(db)
 	defer conn.Close()
+
+	fileLog.Path = "./logs/SQL"
+	fileLog.Name = "Query"
+
+	f := util.Logging(fileLog, "Select Query", query, nil)
+
+	defer f.Close()
 	
+	// 연결된 DB에 쿼리 전송
 	rows, err := conn.Query(query)
 	defer rows.Close()
 
 	if err != nil {
-		log.Fatal("Query failed : ", err.Error())
+		errorLog := log.New(f, "[ERROR] : ", log.LstdFlags)
+		errorLog.Print(" Select Query Error!!")
+		errorLog.Println(err)
 	}
 
 	columns, _ := rows.Columns()
@@ -89,17 +121,23 @@ func SelectListQuery(db DBInfo, query string) []byte {
 
 // UPDATE 쿼리문
 func UpdateQuery(db DBInfo, query string) int64 {
-	dataSource := db.user + ":" + db.pwd + "@tcp(" + db.url + ")/" + db.database
-	conn, err := sql.Open(db.engine, dataSource)
+	conn := DBConnection(db)
 	defer conn.Close()
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	result, err2 := conn.Exec(query)
+	fileLog.Path = "./logs/SQL"
+	fileLog.Name = "Query"
 
-	if err2 != nil {
-		log.Fatal(err2)
+	f := util.Logging(fileLog, "Update Query", query, nil)
+
+	defer f.Close()
+
+	// 연결된 DB에 쿼리 전송
+	result, err := conn.Exec(query)
+
+	if err != nil {
+		errorLog := log.New(f, "[ERROR] : ", log.LstdFlags)
+		errorLog.Print(" Update Query Error!!")
+		errorLog.Println(err)
 	}
 
 	nRow, _ := result.RowsAffected()
@@ -109,17 +147,23 @@ func UpdateQuery(db DBInfo, query string) int64 {
 
 // DELETE 쿼리문
 func DeleteQuery(db DBInfo, query string) int64 {
-	dataSource := db.user + ":" + db.pwd + "@tcp(" + db.url + ")/" + db.database
-	conn, err := sql.Open(db.engine, dataSource)
+	conn := DBConnection(db)
 	defer conn.Close()
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	result, err2 := conn.Exec(query)
+	fileLog.Path = "./logs/SQL"
+	fileLog.Name = "Query"
 
-	if err2 != nil {
-		log.Fatal(err2)
+	f := util.Logging(fileLog, "Delete Query", query, nil)
+
+	defer f.Close()
+
+	// 연결된 DB에 쿼리 전송
+	result, err := conn.Exec(query)
+
+	if err != nil {
+		errorLog := log.New(f, "[ERROR] : ", log.LstdFlags)
+		errorLog.Print(" Delete Query Error!!")
+		errorLog.Println(err)
 	}
 
 	nRow, _ := result.RowsAffected()

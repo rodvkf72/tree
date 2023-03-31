@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-	"time"
-	"os"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -11,35 +9,31 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"tree/controller"
+	"tree/util"
+	//"tree/resource"
 )
 
 func main() {
 	e := echo.New()
 
-	now := time.Now()
-	custom := now.Format("2006-01-02")
-	fileName := custom + "_log.txt"
+	var mainLog = new(util.File)
+	mainLog.Path = "./logs/MainAccess"
+	mainLog.Name = "MainAccess"
 
-	if _, err := os.Stat("./logs"); err != nil {	//폴더가 존재하지 않는 경우
-		os.MkdirAll("./logs", os.ModePerm)
-	}
-
-	f, file := os.OpenFile("./logs/" + fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-
-	if file != nil {
-		panic(fmt.Sprintf("error opening file : %v", file))
-	}
+	f := util.Logging(mainLog, "Run On Server", "", nil)
 
 	defer f.Close()
 
+	// 로그 데이터 포맷 방식을 지정하고 파일에 기록
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `{"time":"${time_rfc3339}", "remote_ip":"${remote_ip}", ` +
+		Format: ` - "time":"${time_rfc3339}", "remote_ip":"${remote_ip}", ` +
 			`"host":"${host}", "method":"${method}", "uri":"${uri}", "user_agent":"${user_agent}",` +
 			`"status":${status}, ` + "\n",
 		Output: f,
 	}))
 
-	e.Use(middleware.Recover()) //미들웨어에서 복구를 사용
+	// 미들웨어에서 복구를 사용
+	e.Use(middleware.Recover())
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, Tree-Api World!")
@@ -59,8 +53,10 @@ func main() {
 		return controller.UserController(c, "userDelete")
 	})
 
+	// 서버 가동
 	err := e.Start(":9090")
+	// 서버 시작 시 문제가 있다면
 	if err != nil {
-		
+		panic(fmt.Sprintf("error opening file : %v", err))
 	}
 }

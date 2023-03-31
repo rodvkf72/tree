@@ -16,7 +16,7 @@ func StringSerialize(list []string) string {
 }
 
 // ex) str = "WHERE 1 = 1 AND a_column = a_value AND b_column = b_value ..."
-func commonUtil(maps map[string]string) string {
+func CommonUtil(maps map[string]string) string {
 	var str string
 
 	str += " WHERE 1 = 1"
@@ -40,9 +40,9 @@ func DynamicInsertUtil(table string, maps map[string]string) string {
 
 	query := "INSERT INTO "
 	query += table + "("
-	query += util.StringSerialize(columns)
+	query += StringSerialize(columns)
 	query += ") VALUES ("
-	query += util.StringSerialize(values)
+	query += StringSerialize(values)
 	query += ");"
 	
 	return query;
